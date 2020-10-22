@@ -7,8 +7,15 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -29,7 +36,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	/**
 	 * graphics - width of each square
 	 */
-	int squareWidth = 50;
+	final int squareWidth = 50;
 
 	/**
 	 * serial version id
@@ -92,6 +99,11 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	long time = 0;
 
 	/**
+	 * time from saves, if applicable
+	 */
+	long savedTime = 0;
+
+	/**
 	 * difficulty
 	 */
 	int difficulty = 0;
@@ -110,6 +122,11 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	 * Random instance
 	 */
 	Random random = new Random();
+
+	/**
+	 * file path for saving/loading
+	 */
+	final String filePath = "saved.txt";
 
 	/**
 	 * Sudoku constructor
@@ -132,7 +149,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		try {
 			while (true) {
 				if (!gameOver)
-					time = System.currentTimeMillis() - startTime;
+					time = System.currentTimeMillis() - startTime + savedTime;
 				jf.repaint();
 				Thread.sleep(100);
 			}
@@ -169,6 +186,12 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		timeDisplay = minutes + ":" + timeDisplay;
 		g.drawString(timeDisplay, 1380, 130);
 
+		// save stuff
+		g.drawRect(1380, 200, 200, 50);
+		g.drawRect(1380, 250, 200, 50);
+		g.drawString("Save to file", 1400, 233);
+		g.drawString("Load from file", 1400, 283);
+
 		for (int i = 0; i < sq; i++) {
 			for (int j = 0; j < sq; j++) {
 				g.setColor(Color.BLACK);
@@ -195,6 +218,85 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			g.drawString(num, x, y);
 		else
 			g.drawString(num, x - 7, y);
+	}
+
+	/**
+	 * prints an array using a printwriter
+	 * 
+	 * @param pw  printwriter
+	 * @param arr array to be printed
+	 */
+	private void printArray(PrintWriter pw, int[][] arr) {
+		for (int i = 0; i < arr.length; i++) {
+			for (int j = 0; j < arr[i].length; j++) {
+				pw.print(arr[i][j] + " ");
+			}
+			pw.println();
+		}
+	}
+
+	/**
+	 * scans an array using a scanner
+	 * 
+	 * @param sc  Scanner
+	 * @param len length of array
+	 * @return
+	 */
+	private int[][] scanArray(Scanner sc, int len) {
+		int[][] answer = new int[len][len];
+		for (int i = 0; i < len; i++) {
+			String[] nums = sc.nextLine().split(" ");
+			for (int j = 0; j < len; j++) {
+				answer[i][j] = Integer.parseInt(nums[j]);
+			}
+		}
+		return answer;
+	}
+
+	/**
+	 * Save sudoku to file
+	 */
+	public void save() {
+		System.out.println("saving to file...");
+		// TODO add encryption functionality
+		// TODO add multiple saved files
+		try {
+			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filePath)));
+			out.println(n);
+			out.println(time);
+			printArray(out, puzzle);
+			printArray(out, game);
+			printArray(out, solution);
+			out.close();
+		} catch (IOException e) {
+			System.out.println("file not found error");
+			return;
+			// e.printStackTrace();
+		}
+		System.out.println("puzzle saved!");
+	}
+
+	/**
+	 * Load sudoku to file
+	 */
+	public void load() {
+		System.out.println("loading from file...");
+		try {
+			Scanner in = new Scanner(new File(filePath));
+			n = Integer.parseInt(in.nextLine());
+			sq = n * n;
+			savedTime = Integer.parseInt(in.nextLine());
+			startTime = System.currentTimeMillis();
+			puzzle = scanArray(in, sq);
+			game = scanArray(in, sq);
+			solution = scanArray(in, sq);
+
+		} catch (FileNotFoundException e) {
+			System.out.println("file not found error");
+			return;
+		}
+
+		System.out.println("puzzle loaded!");
 	}
 
 	/**
@@ -492,6 +594,13 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			} else {
 				selectx = -1;
 				selecty = -1;
+			}
+		}
+		if (mousex >= 1380 && mousex <= 1580) {
+			if (mousey >= 200 && mousey < 250) {
+				save();
+			} else if (mousey >= 250 && mousey <= 300) {
+				load();
 			}
 		}
 	}
