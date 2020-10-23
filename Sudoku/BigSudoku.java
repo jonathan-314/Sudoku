@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.LinkedList;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -129,6 +130,11 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	final String filePath = "saved.txt";
 
 	/**
+	 * list of messages to user
+	 */
+	LinkedList<Message> messages = new LinkedList<>();
+
+	/**
 	 * Sudoku constructor
 	 */
 	public BigSudoku() {
@@ -191,7 +197,17 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		g.drawRect(1380, 250, 200, 50);
 		g.drawString("Save to file", 1400, 233);
 		g.drawString("Load from file", 1400, 283);
-
+		while (!messages.isEmpty() && messages.getFirst().endTime < System.currentTimeMillis()) {
+			messages.remove();
+		}
+		g.setFont(new Font("Helvetica", 15, 15));
+		int messageIndex = 0;
+		for (Message c : messages) {
+			g.drawString(c.message, 1400, 333 + 35 * messageIndex);
+			messageIndex++;
+		}
+		g.setFont(f);
+		
 		for (int i = 0; i < sq; i++) {
 			for (int j = 0; j < sq; j++) {
 				g.setColor(Color.BLACK);
@@ -258,6 +274,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	 */
 	public void save() {
 		System.out.println("saving to file...");
+		messages.add(new Message("saving to file...", System.currentTimeMillis() + 10000));
 		// TODO add encryption functionality
 		// TODO add multiple saved files
 		try {
@@ -274,6 +291,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			// e.printStackTrace();
 		}
 		System.out.println("puzzle saved!");
+		messages.add(new Message("puzzle saved!", System.currentTimeMillis() + 10000));
 	}
 
 	/**
@@ -281,6 +299,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	 */
 	public void load() {
 		System.out.println("loading from file...");
+		messages.add(new Message("loading from file...", System.currentTimeMillis() + 10000));
 		try {
 			Scanner in = new Scanner(new File(filePath));
 			n = Integer.parseInt(in.nextLine());
@@ -297,6 +316,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		}
 
 		System.out.println("puzzle loaded!");
+		messages.add(new Message("puzzle loaded!", System.currentTimeMillis() + 10000));
 	}
 
 	/**
@@ -602,6 +622,22 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			} else if (mousey >= 250 && mousey <= 300) {
 				load();
 			}
+		}
+	}
+
+	private class Message {
+		String message;
+		long endTime;
+
+		/**
+		 * Message constructor
+		 * 
+		 * @param msg message
+		 * @param end end time
+		 */
+		Message(String msg, long end) {
+			message = msg;
+			endTime = end;
 		}
 	}
 
