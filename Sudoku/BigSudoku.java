@@ -207,7 +207,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			messageIndex++;
 		}
 		g.setFont(f);
-		
+
 		for (int i = 0; i < sq; i++) {
 			for (int j = 0; j < sq; j++) {
 				g.setColor(Color.BLACK);
@@ -422,64 +422,44 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			return puzzle;
 		int row = current / sq;
 		int col = current % sq;
-		int available = 0;
+		Permutation permutation = new Permutation();
 		boolean[] possible = new boolean[sq + 1];
 		for (int i = 0; i < sq + 1; i++) {
 			possible[i] = arr[row][col][i];
-			if (i >= 1 && possible[i])
-				available++;
-		}
-		if (available == 0)
-			return falsearray;
-		int permutation = random.nextInt(factorial(available));
-		for (int i = available - 1; i >= 0; i--) {
-			int value = permutation / factorial(i);
-			permutation %= factorial(i);
-			for (int j = 1; j <= sq; j++) {
-				if (!possible[j])
-					continue;
-				if (value == 0) {
-					possible[j] = false;
-					int[][] newPuzzle = new int[sq][sq];
-					boolean[][][] newArray = new boolean[sq][sq][sq + 1];
-					for (int k = 0; k < sq; k++) {
-						for (int l = 0; l < sq; l++) {
-							newPuzzle[k][l] = puzzle[k][l];
-							for (int m = 0; m < sq + 1; m++)
-								newArray[k][l][m] = arr[k][l][m];
-						}
-					}
-					newPuzzle[row][col] = j;
-					for (int k = 0; k < sq; k++) {
-						newArray[row][k][j] = false;
-						newArray[k][col][j] = false;
-					}
-					int squareRow = row / n;
-					int squareCol = col / n;
-					for (int k = 0; k < n; k++)
-						for (int l = 0; l < n; l++)
-							newArray[n * squareRow + k][n * squareCol + l][j] = false;
-					int[][] result = dfs(current + 1, newPuzzle, newArray);
-					if (result[0][0] > 0)
-						return result;
-					break;
-				}
-				value--;
+			if (i >= 1 && possible[i]) {
+				permutation.add(i);
 			}
 		}
-		return falsearray;
-	}
+		if (permutation.size == 0)
+			return falsearray;
 
-	/**
-	 * factorial function
-	 * 
-	 * @param n number
-	 * @return n!
-	 */
-	public int factorial(int n) {
-		if (n <= 9)
-			return new int[] { 1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880 }[n];
-		return n * factorial(n - 1);
+		for (int i = 0; i < permutation.size; i++) {
+			int j = permutation.remove();
+			possible[j] = false;
+			int[][] newPuzzle = new int[sq][sq];
+			boolean[][][] newArray = new boolean[sq][sq][sq + 1];
+			for (int k = 0; k < sq; k++) {
+				for (int l = 0; l < sq; l++) {
+					newPuzzle[k][l] = puzzle[k][l];
+					for (int m = 0; m < sq + 1; m++)
+						newArray[k][l][m] = arr[k][l][m];
+				}
+			}
+			newPuzzle[row][col] = j;
+			for (int k = 0; k < sq; k++) {
+				newArray[row][k][j] = false;
+				newArray[k][col][j] = false;
+			}
+			int squareRow = row / n;
+			int squareCol = col / n;
+			for (int k = 0; k < n; k++)
+				for (int l = 0; l < n; l++)
+					newArray[n * squareRow + k][n * squareCol + l][j] = false;
+			int[][] result = dfs(current + 1, newPuzzle, newArray);
+			if (result[0][0] > 0)
+				return result;
+		}
+		return falsearray;
 	}
 
 	/**
@@ -625,8 +605,60 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		}
 	}
 
+	private class Permutation {
+
+		/**
+		 * how many nums are in the permutation
+		 */
+		int size = 0;
+
+		/**
+		 * array of nums in the permutation
+		 */
+		int[] nums = new int[sq];
+
+		/**
+		 * Permutation constructor
+		 */
+		Permutation() {
+
+		}
+
+		/**
+		 * adds an integer to this permutation
+		 * 
+		 * @param a integer to be added
+		 */
+		public void add(int a) {
+			nums[size] = a;
+			size++;
+		}
+
+		/**
+		 * removes a random integer from this permutation
+		 * 
+		 * @return the random integer
+		 */
+		public int remove() {
+			int index = random.nextInt(size);
+			int answer = nums[index];
+			size--;
+			nums[index] = nums[size];
+			nums[size] = 0; // no loitering!
+			return answer;
+		}
+	}
+
 	private class Message {
+
+		/**
+		 * message of the message
+		 */
 		String message;
+
+		/**
+		 * when to delete this message
+		 */
 		long endTime;
 
 		/**
