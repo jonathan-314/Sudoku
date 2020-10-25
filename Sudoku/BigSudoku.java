@@ -135,6 +135,11 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	LinkedList<Message> messages = new LinkedList<>();
 
 	/**
+	 * length of each message (in milliseconds)
+	 */
+	final long messageLength = 10000;
+
+	/**
 	 * Sudoku constructor
 	 */
 	public BigSudoku() {
@@ -195,15 +200,19 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		// save stuff
 		g.drawRect(1380, 200, 200, 50);
 		g.drawRect(1380, 250, 200, 50);
+		g.drawRect(1380, 300, 200, 50);
 		g.drawString("Save to file", 1400, 233);
 		g.drawString("Load from file", 1400, 283);
+		g.drawString("Check answers", 1400, 333);
+
+		// message stuff
 		while (!messages.isEmpty() && messages.getFirst().endTime < System.currentTimeMillis()) {
 			messages.remove();
 		}
 		g.setFont(new Font("Helvetica", 15, 15));
 		int messageIndex = 0;
 		for (Message c : messages) {
-			g.drawString(c.message, 1400, 333 + 35 * messageIndex);
+			g.drawString(c.message, 1400, 383 + 30 * messageIndex);
 			messageIndex++;
 		}
 		g.setFont(f);
@@ -229,6 +238,14 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		}
 	}
 
+	/**
+	 * draws a number; special function to account for 1 digit vs 2 digit numbers
+	 * 
+	 * @param g   graphics instance
+	 * @param num number to be drawn
+	 * @param x   x coordinate
+	 * @param y   y coordinate
+	 */
 	private void drawNumber(Graphics g, String num, int x, int y) {
 		if (num.length() == 1)
 			g.drawString(num, x, y);
@@ -274,7 +291,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	 */
 	public void save() {
 		System.out.println("saving to file...");
-		messages.add(new Message("saving to file...", System.currentTimeMillis() + 10000));
+		messages.add(new Message("saving to file..."));
 		// TODO add encryption functionality
 		// TODO add multiple saved files
 		try {
@@ -291,7 +308,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			// e.printStackTrace();
 		}
 		System.out.println("puzzle saved!");
-		messages.add(new Message("puzzle saved!", System.currentTimeMillis() + 10000));
+		messages.add(new Message("puzzle saved!"));
 	}
 
 	/**
@@ -299,7 +316,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	 */
 	public void load() {
 		System.out.println("loading from file...");
-		messages.add(new Message("loading from file...", System.currentTimeMillis() + 10000));
+		messages.add(new Message("loading from file..."));
 		try {
 			Scanner in = new Scanner(new File(filePath));
 			n = Integer.parseInt(in.nextLine());
@@ -309,14 +326,13 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 			puzzle = scanArray(in, sq);
 			game = scanArray(in, sq);
 			solution = scanArray(in, sq);
-
 		} catch (FileNotFoundException e) {
 			System.out.println("file not found error");
 			return;
 		}
 
 		System.out.println("puzzle loaded!");
-		messages.add(new Message("puzzle loaded!", System.currentTimeMillis() + 10000));
+		messages.add(new Message("puzzle loaded!"));
 	}
 
 	/**
@@ -572,39 +588,12 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		test = new BigSudoku();
 	}
 
-	@Override
-	public void mouseClicked(MouseEvent e) {
-	}
-
-	@Override
-	public void mousePressed(MouseEvent e) {
-		int mousex = e.getX();
-		int mousey = e.getY();
-		if (mousey >= 90 && mousey <= 90 + sq * squareWidth) {
-			if (mousex >= 370 && mousex <= 370 + sq * squareWidth) {
-				selectx = (mousex - 370) / squareWidth;
-				selecty = (mousey - 90) / squareWidth;
-				if (selectx >= sq || selecty >= sq || game[selectx][selecty] != 0) {
-					selectx = -1;
-					selecty = -1;
-					return;
-				}
-			} else if (mousex >= 1280 && mousex <= 1340) {
-				userFillIn((mousey - 90) / squareWidth + 1);
-			} else {
-				selectx = -1;
-				selecty = -1;
-			}
-		}
-		if (mousex >= 1380 && mousex <= 1580) {
-			if (mousey >= 200 && mousey < 250) {
-				save();
-			} else if (mousey >= 250 && mousey <= 300) {
-				load();
-			}
-		}
-	}
-
+	/**
+	 * Permutation class
+	 * 
+	 * @author jonguo6
+	 *
+	 */
 	private class Permutation {
 
 		/**
@@ -615,7 +604,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		/**
 		 * array of nums in the permutation
 		 */
-		int[] nums = new int[sq];
+		private int[] nums = new int[sq];
 
 		/**
 		 * Permutation constructor
@@ -649,6 +638,12 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		}
 	}
 
+	/**
+	 * Message class
+	 * 
+	 * @author jonguo6
+	 *
+	 */
 	private class Message {
 
 		/**
@@ -667,9 +662,45 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		 * @param msg message
 		 * @param end end time
 		 */
-		Message(String msg, long end) {
+		Message(String msg) {
 			message = msg;
-			endTime = end;
+			endTime = System.currentTimeMillis() + messageLength;
+		}
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		int mousex = e.getX();
+		int mousey = e.getY();
+		if (mousey >= 90 && mousey <= 90 + sq * squareWidth) {
+			if (mousex >= 370 && mousex <= 370 + sq * squareWidth) {
+				selectx = (mousex - 370) / squareWidth;
+				selecty = (mousey - 90) / squareWidth;
+				if (selectx >= sq || selecty >= sq || game[selectx][selecty] != 0) {
+					selectx = -1;
+					selecty = -1;
+					return;
+				}
+			} else if (mousex >= 1280 && mousex <= 1340) {
+				userFillIn((mousey - 90) / squareWidth + 1);
+			} else {
+				selectx = -1;
+				selecty = -1;
+			}
+		}
+		if (mousex >= 1380 && mousex <= 1580) {
+			if (mousey >= 200 && mousey < 250) {
+				save();
+			} else if (mousey >= 250 && mousey <= 300) {
+				load();
+			} else if (mousey >= 300 && mousey <= 350) {
+				checkAnswers = !checkAnswers;
+				messages.add(new Message("check answers: " + checkAnswers));
+			}
 		}
 	}
 
