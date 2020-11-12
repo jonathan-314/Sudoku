@@ -137,7 +137,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	/**
 	 * length of each message (in milliseconds)
 	 */
-	final long messageTime = 10000;
+	final static long MESSAGE_TIME = 10000;
 
 	/**
 	 * BigSudoku constructor
@@ -158,6 +158,19 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		jf.add(this);
 		startTime = System.currentTimeMillis();
 		try {
+
+			// temp
+			int temp = 0;
+			for (int i = 0; i < sq; i++) {
+				for (int j = 0; j < sq; j++) {
+					if (game[i][j] != 0) {
+						temp++;
+					}
+				}
+			}
+			System.out.println("not blank: " + temp);
+			// end temp
+
 			while (true) {
 				if (!gameOver) {
 					time = System.currentTimeMillis() - startTime + savedTime;
@@ -478,39 +491,26 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		int row = current / sq;
 		int col = current % sq;
 		Permutation permutation = new Permutation();
-		boolean[] possible = new boolean[sq + 1];
-		for (int i = 0; i < sq + 1; i++) {
-			possible[i] = rowArray[row][col][i] && colArray[row][col][i] && sqArray[row][col][i];
-			if (i >= 1 && possible[i]) {
+		for (int i = 1; i <= sq; i++) {
+			if (rowArray[row][col][i] && colArray[row][col][i] && sqArray[row][col][i]) {
 				permutation.add(i);
 			}
 		}
-		if (permutation.size == 0) {
+		if (permutation.size == 0) { // no possibilities
 			return falsearray;
 		}
 
 		while (permutation.size > 0) {
 			int j = permutation.remove();
-			possible[j] = false;
-			fillIn(row, col, j, puzzle, rowArray, colArray, sqArray);
+			fillIn(row, col, j, puzzle, rowArray, colArray, sqArray, false);
 			int[][] result = dfs(current + 1, puzzle, rowArray, colArray, sqArray);
-			if (result[0][0] > 0) {
+			if (result[0][0] > 0) { // success
 				return result;
 			}
 
 			// reset
+			fillIn(row, col, j, puzzle, rowArray, colArray, sqArray, true);
 			puzzle[row][col] = 0;
-			for (int k = 0; k < sq; k++) {
-				rowArray[row][k][j] = true;
-				colArray[k][col][j] = true;
-			}
-			int squareRow = row / n;
-			int squareCol = col / n;
-			for (int k = 0; k < n; k++) {
-				for (int l = 0; l < n; l++) {
-					sqArray[n * squareRow + k][n * squareCol + l][j] = true;
-				}
-			}
 		}
 		return falsearray;
 	}
@@ -522,18 +522,18 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	 * @return solved puzzle
 	 */
 	public int[][] solve(int[][] puzz) {
-		boolean[][][] rarr = generatePossibilitiesArray();
-		boolean[][][] carr = generatePossibilitiesArray();
-		boolean[][][] sqarr = generatePossibilitiesArray();
+		boolean[][][] rowArray = generatePossibilitiesArray();
+		boolean[][][] colArray = generatePossibilitiesArray();
+		boolean[][][] sqArray = generatePossibilitiesArray();
 		for (int i = 0; i < sq; i++) {
 			for (int j = 0; j < sq; j++) {
 				if (puzz[i][j] != 0) {
-					fillIn(i, j, puzz[i][j], puzz, rarr, carr, sqarr);
+					fillIn(i, j, puzz[i][j], puzz, rowArray, colArray, sqArray, false);
 				}
 			}
 		}
 		for (int i = 0; i < sq * sq; i++) {
-			if (!solveOne(puzz, rarr, carr, sqarr)) {
+			if (!solveOne(puzz, rowArray, colArray, sqArray)) {
 				break;
 			}
 		}
@@ -543,13 +543,13 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	/**
 	 * is it possible to solve one square?
 	 * 
-	 * @param puzz  the puzzle
-	 * @param rarr  possibilities array, based on rows
-	 * @param carr  possibilities array, based on columns
-	 * @param sqarr possibilities array, based on the n x n squares
+	 * @param puzz     the puzzle
+	 * @param rowArray possibilities array, based on rows
+	 * @param colArray possibilities array, based on columns
+	 * @param sqArray  possibilities array, based on the n x n squares
 	 * @return whether it is possible to solve one square or no
 	 */
-	public boolean solveOne(int[][] puzz, boolean[][][] rarr, boolean[][][] carr, boolean[][][] sqarr) {
+	public boolean solveOne(int[][] puzz, boolean[][][] rowArray, boolean[][][] colArray, boolean[][][] sqArray) {
 		for (int i = 0; i < sq; i++) {
 			for (int j = 0; j < sq; j++) {
 				if (game[i][j] != 0) { // skeleton!
@@ -561,7 +561,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 				int possibilities = 0;
 				int num = 0;
 				for (int k = 1; k < sq + 1; k++) {
-					if (rarr[i][j][k] && carr[i][j][k] && sqarr[i][j][k]) {
+					if (rowArray[i][j][k] && colArray[i][j][k] && sqArray[i][j][k]) {
 						possibilities++;
 						num = k;
 					}
@@ -569,7 +569,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 				if (possibilities != 1) { // only one possibility!
 					continue;
 				}
-				fillIn(i, j, num, puzz, rarr, carr, sqarr);
+				fillIn(i, j, num, puzz, rowArray, colArray, sqArray, false);
 				return true;
 			}
 		}
@@ -579,27 +579,27 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	/**
 	 * fills in one square
 	 * 
-	 * @param r     row
-	 * @param c     col
-	 * @param value value to be filled in
-	 * @param puzz  the puzzle
-	 * @param rarr  possibilities array, based on rows
-	 * @param carr  possibilities array, based on columns
-	 * @param sqarr possibilities array, based on the n x n squares
+	 * @param r        row
+	 * @param c        col
+	 * @param value    value to be filled in
+	 * @param puzz     the puzzle
+	 * @param rowArray possibilities array, based on rows
+	 * @param colArray possibilities array, based on columns
+	 * @param sqArray  possibilities array, based on the n x n squares
+	 * @param boolVal  boolean value
 	 */
-	public void fillIn(int r, int c, int value, int[][] puzz, boolean[][][] rarr, boolean[][][] carr,
-			boolean[][][] sqarr) {
+	private void fillIn(int r, int c, int value, int[][] puzz, boolean[][][] rowArray, boolean[][][] colArray,
+			boolean[][][] sqArray, boolean boolVal) {
 		puzz[r][c] = value;
 		for (int i = 0; i < sq; i++) {
-			rarr[r][i][value] = false;
-			carr[i][c][value] = false;
+			rowArray[r][i][value] = boolVal;
+			colArray[i][c][value] = boolVal;
 		}
 		int squareRow = r / n;
 		int squareCol = c / n;
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
-				// array[n * squareRow + i][n * squareCol + j][value] = false;
-				sqarr[n * squareRow + i][n * squareCol + j][value] = false;
+				sqArray[n * squareRow + i][n * squareCol + j][value] = boolVal;
 			}
 		}
 	}
@@ -628,7 +628,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		}
 		if (allCorrect) {
 			selectx = -1;
-			selecty = -1;
+			selecty = -1; // unselect square
 			gameOver = true;
 			JOptionPane.showMessageDialog(this, "Game Over! You win!");
 			System.exit(ABORT);
@@ -645,7 +645,10 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	}
 
 	/**
-	 * Permutation class
+	 * <h1>Permutation class</h1>
+	 * <p>
+	 * Randomized stack/queue
+	 * </p>
 	 * 
 	 * @author jonguo6
 	 *
@@ -653,12 +656,12 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	private class Permutation {
 
 		/**
-		 * how many nums are in the permutation
+		 * how many numbers are in the permutation
 		 */
 		int size = 0;
 
 		/**
-		 * array of nums in the permutation
+		 * array of numbers in the permutation
 		 */
 		private int[] nums = new int[sq];
 
@@ -695,7 +698,10 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	}
 
 	/**
-	 * Message class
+	 * <h1>Message class</h1>
+	 * <p>
+	 * Messages to the user
+	 * </p>
 	 * 
 	 * @author jonguo6
 	 *
@@ -720,7 +726,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		 */
 		Message(String msg) {
 			message = msg;
-			endTime = System.currentTimeMillis() + messageTime;
+			endTime = System.currentTimeMillis() + MESSAGE_TIME;
 		}
 	}
 
@@ -785,12 +791,11 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 		}
 		if (c <= '9' && c >= '0') {
 			int currentValue = puzzle[selectx][selecty];
-			// 2 digits!
-			if (currentValue == 0) {
+			if (currentValue == 0) { // currently blank
 				userFillIn(c - '0');
-			} else if (currentValue < 10) {
+			} else if (currentValue < 10) { // currently 1 digit
 				userFillIn(currentValue * 10 + (c - '0'));
-			} else {
+			} else { // currently 2 digits already
 				userFillIn(0);
 			}
 		} else {
