@@ -188,17 +188,20 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 	 */
 	public void paint(Graphics g) {
 		g.setColor(Color.BLACK);
+		g.fillRect(0, 0, screenWidth, screenHeight);
+		
+		g.setColor(Color.YELLOW);
 		g.drawOval(screenWidth / 2 - 50, 8, 15, 15);
 		g.drawString("C", screenWidth / 2 - 50 + 3, 20);
 		g.drawString("Jonathan Guo", screenWidth / 2 - 30, 20);
 		Font f = new Font("Helvetica", 20, 25);
 		g.setFont(f);
-		g.setColor(Color.PINK);
+		g.setColor(Color.BLUE);
 		if (selectx != -1 && selecty != -1) { // selected square
 			g.fillRect(squareWidth * selectx + 370, squareWidth * selecty + 90, squareWidth, squareWidth);
 		}
 
-		g.setColor(Color.BLACK);
+		g.setColor(Color.YELLOW);
 		for (int i = 0; i < sq; i++) { // list of numbers
 			g.drawRect(1280, squareWidth * i + 90, squareWidth, squareWidth);
 			drawNumber(g, "" + (i + 1), 1280 + 17, squareWidth * i + 125);
@@ -235,13 +238,13 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 
 		for (int i = 0; i < sq; i++) {
 			for (int j = 0; j < sq; j++) {
-				g.setColor(Color.BLACK);
+				g.setColor(Color.YELLOW);
 				g.drawRect(squareWidth * i + 370, squareWidth * j + 90, squareWidth, squareWidth);
 				if (puzzle[i][j] == 0) { // blank square
 					continue;
 				}
 				if (game[i][j] == 0) { // user entered number
-					g.setColor(Color.BLUE);
+					g.setColor(Color.CYAN);
 				}
 				if (checkAnswers) {// only if checkAnswers is on
 					if (game[i][j] == 0 && solution[i][j] != puzzle[i][j]) { // incorrect value entered!
@@ -251,7 +254,7 @@ public class BigSudoku extends JPanel implements MouseListener, KeyListener {
 				drawNumber(g, "" + puzzle[i][j], squareWidth * i + 387, squareWidth * j + 125);
 			}
 		}
-		g.setColor(Color.BLACK);
+		g.setColor(Color.YELLOW);
 		for (int i = 0; i < n + 1; i++) {
 			g.fillRect(n * squareWidth * i + 370 - 2, 90, 4, sq * squareWidth);
 			g.fillRect(370, n * squareWidth * i + 90 - 2, sq * squareWidth, 4);
