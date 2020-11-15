@@ -86,6 +86,16 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 	Random random = new Random();
 
 	/**
+	 * width of screen
+	 */
+	int screenWidth = getToolkit().getScreenSize().width;
+
+	/**
+	 * height of screen
+	 */
+	int screenHeight = getToolkit().getScreenSize().height;
+
+	/**
 	 * Sudoku constructor
 	 */
 	public Sudoku() {
@@ -104,6 +114,15 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 		jf.add(this);
 		startTime = System.currentTimeMillis();
 		try {
+			int temp = 0;
+			for (int i = 0; i < 9; i++) {
+				for (int j = 0; j < 9; j++) {
+					if (game[i][j] != 0) {
+						temp++;
+					}
+				}
+			}
+			System.out.println("not blank: " + temp);
 			while (true) {
 				if (!gameOver)
 					time = System.currentTimeMillis() - startTime;
@@ -120,16 +139,20 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 	 */
 	public void paint(Graphics g) {
 		g.setColor(Color.BLACK);
-		g.drawOval(590, 8, 15, 15);
-		g.drawString("C", 593, 20);
-		g.drawString("Jonathan Guo", 610, 20);
+		g.fillRect(0, 0, screenWidth, screenHeight);
+		
+		g.setColor(Color.YELLOW);
+		g.drawOval(screenWidth / 2 - 50, 8, 15, 15);
+		g.drawString("C", screenWidth / 2 - 50 + 3, 20);
+		g.drawString("Jonathan Guo", screenWidth / 2 - 50 + 20, 20);
+		
 		Font f = new Font("Helvetica", 20, 30);
 		g.setFont(f);
-		g.setColor(Color.PINK);
+		g.setColor(Color.BLUE);
 		if (selectx != -1 && selecty != -1)
 			g.fillRect(60 * selectx + 370, 60 * selecty + 90, 60, 60);
 
-		g.setColor(Color.BLACK);
+		g.setColor(Color.YELLOW);
 		for (int i = 0; i < 9; i++) {
 			g.drawRect(980, 60 * i + 90, 60, 60);
 			g.drawString("" + (i + 1), 980 + 20, 60 * i + 130);
@@ -145,19 +168,19 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 
 		for (int i = 0; i < 9; i++) {
 			for (int j = 0; j < 9; j++) {
-				g.setColor(Color.BLACK);
+				g.setColor(Color.YELLOW);
 				g.drawRect(60 * i + 370, 60 * j + 90, 60, 60);
 				if (puzzle[i][j] == 0) // blank square
 					continue;
 				if (game[i][j] == 0) // user entered number
-					g.setColor(Color.BLUE);
+					g.setColor(Color.CYAN);
 				if (checkAnswers)
 					if (game[i][j] == 0 && solution[i][j] != puzzle[i][j]) // incorrect value entered!
 						g.setColor(Color.RED);
 				g.drawString("" + puzzle[i][j], 60 * i + 390, 60 * j + 130);
 			}
 		}
-		g.setColor(Color.BLACK);
+		g.setColor(Color.YELLOW);
 		for (int i = 0; i < 4; i++) {
 			g.fillRect(180 * i + 370 - 2, 90, 4, 540);
 			g.fillRect(370, 180 * i + 90 - 2, 540, 4);
@@ -188,7 +211,7 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 
 		int row = -1;
 		int col = -1;
-		for (int k = 0; k < 200; k++) {
+		for (int k = 0; k < 500; k++) {
 			while (true) { // make sure it isn't filled in
 				row = random.nextInt(9);
 				col = random.nextInt(9);
@@ -224,12 +247,27 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 				tick++;
 			}
 			boolean allFilledIn = true;
-			for (int i = 0; i < 9; i++)
-				for (int j = 0; j < 9; j++)
-					if (answer[i][j] == 0)
+			for (int i = 0; i < 9; i++) {
+				for (int j = 0; j < 9; j++) {
+					if (answer[i][j] == 0) {
 						allFilledIn = false;
+						break;
+					}
+				}
+			}
 			if (allFilledIn)
 				break;
+		}
+		return answer;
+	}
+
+	private boolean[][][] generatePossibilitiesArray() {
+		boolean[][][] answer = new boolean[9][9][10];
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < 9; j++) {
+				Arrays.fill(answer[i][j], true);
+				answer[i][j][0] = false;
+			}
 		}
 		return answer;
 	}
@@ -241,28 +279,40 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 	 */
 	public int[][] generateSolution() {
 		int[][] puzzle = new int[9][9];
-		boolean[][][] array = new boolean[9][9][10];
-		for (int i = 0; i < 9; i++) {
-			for (int j = 0; j < 9; j++) {
-				Arrays.fill(array[i][j], true);
-				array[i][j][0] = false;
-			}
-		}
-		puzzle = dfs(0, puzzle, array);
+//		boolean[][][] rowArray = new boolean[9][9][10];
+//		boolean[][][] colArray = new boolean[9][9][10];
+//		boolean[][][] sqArray = new boolean[9][9][10];
+//		for (int i = 0; i < 9; i++) {
+//			for (int j = 0; j < 9; j++) {
+//				Arrays.fill(rowArray[i][j], true);
+//				rowArray[i][j][0] = false;
+//				Arrays.fill(colArray[i][j], true);
+//				colArray[i][j][0] = false;
+//				Arrays.fill(sqArray[i][j], true);
+//				sqArray[i][j][0] = false;
+//			}
+//		}
+		boolean[][][] rowArray = generatePossibilitiesArray();
+		boolean[][][] colArray = generatePossibilitiesArray();
+		boolean[][][] sqArray = generatePossibilitiesArray();
+		puzzle = dfs(0, puzzle, rowArray, colArray, sqArray);
 		return puzzle;
 	}
 
 	/**
 	 * depth first search, creates a puzzle
 	 * 
-	 * @param current current index that is being looked at
-	 * @param puzzle  the puzzle
-	 * @param arr     which values are possible
+	 * @param current  current index that is being looked at
+	 * @param puzzle   the puzzle
+	 * @param rowArray which values are possible, based on rows
+	 * @param colArray which values are possible, based on columns
+	 * @param sqArray  which values are possible, based on squares
 	 * @return a randomly generated puzzle
 	 */
-	public int[][] dfs(int current, int[][] puzzle, boolean[][][] arr) {
-		int[][] falsearray = new int[9][9]; // no solutions found
-		falsearray[0][0] = -1;
+	public int[][] dfs(int current, int[][] puzzle, boolean[][][] rowArray, boolean[][][] colArray,
+			boolean[][][] sqArray) {
+		int[][] falseArray = new int[9][9]; // no solutions found
+		falseArray[0][0] = -1;
 		if (current == 81) // dfs done!! made it to the end
 			return puzzle;
 		int row = current / 9;
@@ -270,12 +320,12 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 		int available = 0;
 		boolean[] possible = new boolean[10];
 		for (int i = 0; i < 10; i++) {
-			possible[i] = arr[row][col][i];
+			possible[i] = rowArray[row][col][i] && colArray[row][col][i] && sqArray[row][col][i];
 			if (i >= 1 && possible[i])
 				available++;
 		}
 		if (available == 0)
-			return falsearray;
+			return falseArray;
 		int permutation = random.nextInt(factorial(available));
 		for (int i = available - 1; i >= 0; i--) {
 			int value = permutation / factorial(i);
@@ -285,34 +335,52 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 					continue;
 				if (value == 0) {
 					possible[j] = false;
-					int[][] newPuzzle = new int[9][9];
-					boolean[][][] newArray = new boolean[9][9][10];
+					// int[][] newPuzzle = new int[9][9];
+					// boolean[][][] newArray = new boolean[9][9][10];
+//					for (int k = 0; k < 9; k++) {
+//						for (int l = 0; l < 9; l++) {
+//							newPuzzle[k][l] = puzzle[k][l];
+//							for (int m = 0; m < 10; m++)
+//								newArray[k][l][m] = arr[k][l][m];
+//						}
+//					}
+
+					// newPuzzle[row][col] = j;
+					puzzle[row][col] = j;
+
 					for (int k = 0; k < 9; k++) {
-						for (int l = 0; l < 9; l++) {
-							newPuzzle[k][l] = puzzle[k][l];
-							for (int m = 0; m < 10; m++)
-								newArray[k][l][m] = arr[k][l][m];
-						}
-					}
-					newPuzzle[row][col] = j;
-					for (int k = 0; k < 9; k++) {
-						newArray[row][k][j] = false;
-						newArray[k][col][j] = false;
+						// newArray[row][k][j] = false;
+						// newArray[k][col][j] = false;
+						rowArray[row][k][j] = false;
+						colArray[k][col][j] = false;
 					}
 					int squareRow = row / 3;
 					int squareCol = col / 3;
 					for (int k = 0; k < 3; k++)
 						for (int l = 0; l < 3; l++)
-							newArray[3 * squareRow + k][3 * squareCol + l][j] = false;
-					int[][] result = dfs(current + 1, newPuzzle, newArray);
+							// newArray[3 * squareRow + k][3 * squareCol + l][j] = false;
+							sqArray[3 * squareRow + k][3 * squareCol + l][j] = false;
+					int[][] result = dfs(current + 1, puzzle, rowArray, colArray, sqArray);
+					// int[][] result = dfs(current + 1, newPuzzle, newArray);
 					if (result[0][0] > 0)
 						return result;
+					puzzle[row][col] = 0;
+					for (int k = 0; k < 9; k++) {
+						// newArray[row][k][j] = false;
+						// newArray[k][col][j] = false;
+						rowArray[row][k][j] = true;
+						colArray[k][col][j] = true;
+					}
+					for (int k = 0; k < 3; k++)
+						for (int l = 0; l < 3; l++)
+							// newArray[3 * squareRow + k][3 * squareCol + l][j] = false;
+							sqArray[3 * squareRow + k][3 * squareCol + l][j] = true;
 					break;
 				}
 				value--;
 			}
 		}
-		return falsearray;
+		return falseArray;
 	}
 
 	/**
@@ -334,46 +402,65 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 	 * @return solved puzzle
 	 */
 	public int[][] solve(int[][] puzz) {
-		boolean[][][] array = new boolean[9][9][10];
+//		boolean[][][] rowArray = new boolean[9][9][10];
+//		boolean[][][] colArray = new boolean[9][9][10];
+//		boolean[][][] sqArray = new boolean[9][9][10];
+//		for (int i = 0; i < 9; i++) {
+//			for (int j = 0; j < 9; j++) {
+//				Arrays.fill(rowArray[i][j], true);
+//				rowArray[i][j][0] = false;
+//				Arrays.fill(colArray[i][j], true);
+//				colArray[i][j][0] = false;
+//				Arrays.fill(sqArray[i][j], true);
+//				sqArray[i][j][0] = false;
+//			}
+//		}
+		boolean[][][] rowArray = generatePossibilitiesArray();
+		boolean[][][] colArray = generatePossibilitiesArray();
+		boolean[][][] sqArray = generatePossibilitiesArray();
 		for (int i = 0; i < 9; i++) {
 			for (int j = 0; j < 9; j++) {
-				Arrays.fill(array[i][j], true);
-				array[i][j][0] = false;
+				if (puzz[i][j] != 0) {
+					fillIn(i, j, puzz[i][j], puzz, rowArray, colArray, sqArray);
+				}
 			}
 		}
-		for (int i = 0; i < 9; i++)
-			for (int j = 0; j < 9; j++)
-				if (puzz[i][j] != 0)
-					fillIn(i, j, puzz[i][j], puzz, array);
-		for (int i = 0; i < 81; i++)
-			if (!solveOne(puzz, array))
+		for (int i = 0; i < 81; i++) {
+			if (!solveOne(puzz, rowArray, colArray, sqArray)) {
 				break;
+			}
+		}
 		return puzz;
 	}
 
 	/**
 	 * is it possible to solve one square?
 	 * 
-	 * @param puzz  the puzzle
-	 * @param array possibilities array
-	 * @return whether it is possible to solve one square or not
+	 * @param puzz     the puzzle
+	 * @param rowArray possibilities array, based on rows
+	 * @param colArray possibilities array, based on columns
+	 * @param sqArray  possibilities array, based on squares
+	 * @return whether it is possible to solve on square or not
 	 */
-	public boolean solveOne(int[][] puzz, boolean[][][] array) {
+	public boolean solveOne(int[][] puzz, boolean[][][] rowArray, boolean[][][] colArray, boolean[][][] sqArray) {
 		for (int i = 0; i < 9; i++) {
 			for (int j = 0; j < 9; j++) {
 				if (game[i][j] != 0)
 					continue;
+				if (puzz[i][j] != 0) {
+					continue;
+				}
 				int possibilities = 0;
 				int num = 0;
-				for (int k = 1; k < 10; k++) {
-					if (array[i][j][k]) {
+				for (int k = 1; k <= 9; k++) {
+					if (rowArray[i][j][k] && colArray[i][j][k] && sqArray[i][j][k]) {
 						possibilities++;
 						num = k;
 					}
 				}
 				if (possibilities != 1) // only one possibility!
 					continue;
-				fillIn(i, j, num, puzz, array);
+				fillIn(i, j, num, puzz, rowArray, colArray, sqArray);
 				return true;
 			}
 		}
@@ -383,24 +470,31 @@ public class Sudoku extends JPanel implements MouseListener, KeyListener {
 	/**
 	 * fills in one square
 	 * 
-	 * @param r     row
-	 * @param c     col
-	 * @param value value to be filled in
-	 * @param puzz  the puzzle
-	 * @param array the possibility array
+	 * @param r        row
+	 * @param c        column
+	 * @param value    value to be filled in
+	 * @param puzz     the puzzle
+	 * @param rowArray possibility array, based on rows
+	 * @param colArray possibility array, based on columns
+	 * @param sqArray  possibility array, based on squares
 	 */
-	public void fillIn(int r, int c, int value, int[][] puzz, boolean[][][] array) {
+	public void fillIn(int r, int c, int value, int[][] puzz, boolean[][][] rowArray, boolean[][][] colArray,
+			boolean[][][] sqArray) {
 		puzz[r][c] = value;
 		for (int i = 0; i < 9; i++) {
-			array[r][i][value] = false;
-			array[i][c][value] = false;
-			array[r][c][i + 1] = false;
+			// array[r][i][value] = false;
+			// array[i][c][value] = false;
+			// array[r][c][i + 1] = false;
+
+			rowArray[r][i][value] = false;
+			colArray[i][c][value] = false;
 		}
 		int squareRow = r / 3;
 		int squareCol = c / 3;
 		for (int i = 0; i < 3; i++)
 			for (int j = 0; j < 3; j++)
-				array[3 * squareRow + i][3 * squareCol + j][value] = false;
+				// array[3 * squareRow + i][3 * squareCol + j][value] = false;
+				sqArray[3 * squareRow + i][3 * squareCol + j][value] = false;
 	}
 
 	/**
